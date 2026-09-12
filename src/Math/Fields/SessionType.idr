@@ -39,8 +39,8 @@ sendGaugeToken (MkChan id) val = MkChan id
 
 ||| Linearly receives a gauge charge token across session protocol `Recv a p`
 public export
-recvGaugeToken : (1 chan : Channel (Recv a p)) -> (a, Channel p)
-recvGaugeToken (MkChan id) = (believe_me (), MkChan id)
+recvGaugeToken : (1 chan : Channel (Recv a p)) -> (val : a) -> (a, Channel p)
+recvGaugeToken (MkChan id) val = (val, MkChan id)
 
 ||| Linearly terminates a completed session channel
 public export
@@ -65,9 +65,10 @@ sendMetricalGaugeTensor (MkGaugeSync space (MkChan id)) (BoxSpace _ payload) =
 public export
 recvMetricalGaugeTensor : {dim : Nat} -> {color : MetricColor} -> {a : Type} ->
                           (1 chan : GaugeSyncChannel dim color (Recv a p)) -> 
+                          MetricalEnvelope dim color a ->
                           (MetricalEnvelope dim color a, GaugeSyncChannel dim color p)
-recvMetricalGaugeTensor (MkGaugeSync space (MkChan id)) =
-  (pure (believe_me ()), MkGaugeSync space (MkChan id))
+recvMetricalGaugeTensor (MkGaugeSync space (MkChan id)) env =
+  (env, MkGaugeSync space (MkChan id))
 
 ||| Linearly terminates a completed metrically synchronized session channel
 public export
