@@ -24,6 +24,10 @@ public export
 Eq GaugePhase where
   (MkGaugePhase p1) == (MkGaugePhase p2) = p1 == p2
 
+public export
+Show GaugePhase where
+  show (MkGaugePhase p) = "GaugePhase(" ++ show p ++ ")"
+
 ||| Neutral identity gauge phase element (0 phase shift)
 public export
 unitGaugePhase : GaugePhase
@@ -57,6 +61,10 @@ public export
 Eq GaugeFieldTensor where
   (MkGaugeFieldTensor e1 b1) == (MkGaugeFieldTensor e2 b2) =
     e1 == e2 && b1 == b2
+
+public export
+Show GaugeFieldTensor where
+  show (MkGaugeFieldTensor e b) = "GaugeFieldTensor(E=" ++ show e ++ ", B=" ++ show b ++ ")"
 
 ||| Action of U(1) Gauge Group phase transformation on field potentials.
 ||| Local phase rotation preserves invariant field tensor norm (E^2 + B^2).
