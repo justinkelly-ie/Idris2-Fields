@@ -4,11 +4,7 @@ authors = "Justin Kelly"
 brief   = "Layer 7 Monadic Session Types, Gauge Fields & Group Actions Subsystem."
 
 depends = base
-        , Idris2-Multiset-Core
-        , Idris2-Multiset-Transform
         , Idris2-Geometry
-        , Idris2-Topology
-        , Idris2-Cellular
         , Idris2-Physics
 
 sourcedir = "src"
