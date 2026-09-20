@@ -6,7 +6,8 @@ brief   = "Layer 7 Monadic Session Types, Gauge Fields & Group Actions Subsystem
 depends = Idris2-Geometry, Idris2-Multiset-Core, Idris2-Multiset-Transform, base, linear
 sourcedir = "src"
 
-modules = Math.Fields.GaugeFieldStream,
+modules = Fields,
+          Math.Fields.GaugeFieldStream,
           Math.Fields.GaugeGroup,
           Math.Fields.GaugeIsomorphism,
           Math.Fields.SessionType

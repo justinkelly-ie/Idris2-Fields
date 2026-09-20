@@ -6,7 +6,7 @@ import Math.Multiset
 import Core.UnixelFraction
 
 import Core.VexelMaxel
-import Core.TransformMultiset
+import Core.MaxelTransform
 import Geometry.Applicative
 import Geometry.MetricalBounds
 import Math.MotivicProof
