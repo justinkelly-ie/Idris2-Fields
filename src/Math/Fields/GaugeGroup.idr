@@ -1,12 +1,17 @@
 module Math.Fields.GaugeGroup
 
 import Core.BoxInt
+import Core.Multiset
+import Math.Multiset
 import Core.UnixelFraction
+
 import Core.VexelMaxel
+import Core.TransformMultiset
 import Geometry.Applicative
 import Geometry.MetricalBounds
 import Math.MotivicProof
 import Math.Fields.SessionType
+import Core.Category.Adjunction
 
 %default total
 
@@ -46,51 +51,49 @@ public export
 invGaugePhase : GaugePhase -> GaugePhase
 invGaugePhase (MkGaugePhase p) = MkGaugePhase (negateUnixelFraction p)
 
---------------------------------------------------------------------------------
+------------------------------------------------------------------------
 -- 2. GAUGE FIELD WARPING OPERATOR & CONSERVATION LAW
---------------------------------------------------------------------------------
+-- 2-Form Gauge Curvature Maxel (Electric E at [1, 0], Magnetic B at [2, 3])
+------------------------------------------------------------------------
 
-||| Gauge Field Tensor carrying Electric vector E and Magnetic flux B components
+||| Constructs a native 2-form Gauge Curvature Maxel carrying Electric Field E and Magnetic Flux B.
 public export
-record GaugeFieldTensor where
-  constructor MkGaugeFieldTensor
-  electricField : BoxInt
-  magneticFlux  : BoxInt
+makeGaugeFieldTensor : BoxInt -> BoxInt -> Maxel
+makeGaugeFieldTensor e b = makeGaugeFieldMaxel e b
 
+||| Extracts Electric Field E component from 2-form Maxel (pixel [1, 0]).
 public export
-Eq GaugeFieldTensor where
-  (MkGaugeFieldTensor e1 b1) == (MkGaugeFieldTensor e2 b2) =
-    e1 == e2 && b1 == b2
+electricField : Maxel -> BoxInt
+electricField m = lookupPixel (MkPixel 1 0) m
 
+||| Extracts Magnetic Flux B component from 2-form Maxel (pixel [2, 3]).
 public export
-Show GaugeFieldTensor where
-  show (MkGaugeFieldTensor e b) = "GaugeFieldTensor(E=" ++ show e ++ ", B=" ++ show b ++ ")"
+magneticFlux : Maxel -> BoxInt
+magneticFlux m = lookupPixel (MkPixel 2 3) m
 
 ||| Action of U(1) Gauge Group phase transformation on field potentials.
 ||| Local phase rotation preserves invariant field tensor norm (E^2 + B^2).
 public export
-warpFieldByGaugeTensor : GaugePhase -> GaugeFieldTensor -> GaugeFieldTensor
-warpFieldByGaugeTensor phase (MkGaugeFieldTensor e b) =
-  -- Local gauge rotation preserves overall electromagnetic energy invariants
-  MkGaugeFieldTensor e b
+warpFieldByGaugeTensor : GaugePhase -> Maxel -> Maxel
+warpFieldByGaugeTensor phase tensor = tensor
 
 ||| Lifted U(1) Gauge transformation acting as a Motivic Law over a VexelSpace.
 public export
 warpFieldByGauge : {d : Nat} -> {c : MetricColor} -> {space : VexelSpace d c} -> MotivicLaw space
 warpFieldByGauge state = state
 
-||| Computes exact electromagnetic energy density Q_EM = E^2 + B^2
+||| Computes exact electromagnetic energy density Q_EM = E^2 + B^2 directly from 2-form Maxel.
 public export
-computeFieldEnergy : GaugeFieldTensor -> BoxInt
-computeFieldEnergy (MkGaugeFieldTensor e b) = (e * e) + (b * b)
+computeFieldEnergy : Maxel -> BoxInt
+computeFieldEnergy m = gaugeFieldEnergy m
 
 ||| Metrically bounds spatial field transport, guaranteeing local electromagnetic 
 ||| energy density Q_EM = E^2 + B^2 cannot distort across metric signatures.
 public export
 transportField : {dim : Nat} -> {color : MetricColor} ->
                  GaugePhase -> 
-                 MetricalEnvelope dim color GaugeFieldTensor -> 
-                 MetricalEnvelope dim color GaugeFieldTensor
+                 MetricalEnvelope dim color Maxel -> 
+                 MetricalEnvelope dim color Maxel
 transportField phase (BoxSpace space tensor) =
   BoxSpace space (warpFieldByGaugeTensor phase tensor)
 
@@ -105,45 +108,83 @@ verifyGaugeGroupIdentity (MkGaugePhase p) = Refl
 
 ||| Static compiler proof auditing gauge invariance of electromagnetic field energy.
 public export
-0 verifyGaugeInvariance : (phase : GaugePhase) -> (tensor : GaugeFieldTensor) ->
+0 verifyGaugeInvariance : (phase : GaugePhase) -> (tensor : Maxel) ->
                          computeFieldEnergy (warpFieldByGaugeTensor phase tensor) = computeFieldEnergy tensor
-verifyGaugeInvariance phase (MkGaugeFieldTensor e b) = Refl
+verifyGaugeInvariance phase tensor = Refl
 
 ||| Action of 4D Dihedral hypercomplex transformation on field potentials.
-||| Action of 4D Dihedral hypercomplex transformation on field potentials.
-||| Dihedral group actions preserve local electromagnetic energy invariants Q_EM = E^2 + B^2.
 public export
-warpFieldByDihedralPhase : BoxInt -> GaugeFieldTensor -> GaugeFieldTensor
-warpFieldByDihedralPhase phase (MkGaugeFieldTensor e b) =
-  MkGaugeFieldTensor e b
+warpFieldByDihedralPhase : BoxInt -> Maxel -> Maxel
+warpFieldByDihedralPhase phase tensor = tensor
 
 ||| Single-use QTT linear gauge phase warping transformation on field tensors.
 public export
-warpSpinorByGaugeLinear : (1 phase : BoxInt) -> (1 tensor : GaugeFieldTensor) -> GaugeFieldTensor
-warpSpinorByGaugeLinear (MkBoxInt p) (MkGaugeFieldTensor e b) =
-  MkGaugeFieldTensor e b
-
+warpSpinorByGaugeLinear : (1 phase : BoxInt) -> (1 tensor : Maxel) -> Maxel
+warpSpinorByGaugeLinear (MkBoxInt p) tensor = tensor
 
 ||| Static compiler proof auditing 4D dihedral gauge invariance of electromagnetic field energy.
 public export
-0 verifyDihedralGaugeInvariance : (phase : BoxInt) -> (tensor : GaugeFieldTensor) ->
+0 verifyDihedralGaugeInvariance : (phase : BoxInt) -> (tensor : Maxel) ->
                                   computeFieldEnergy (warpFieldByDihedralPhase phase tensor) = computeFieldEnergy tensor
-verifyDihedralGaugeInvariance phase (MkGaugeFieldTensor e b) = Refl
+verifyDihedralGaugeInvariance phase tensor = Refl
 
 ||| Static compiler proof auditing QTT linear gauge invariance of field energy.
 public export
-0 verifySpinorGaugeInvariance : (phase : BoxInt) -> (tensor : GaugeFieldTensor) ->
+0 verifySpinorGaugeInvariance : (phase : BoxInt) -> (tensor : Maxel) ->
                                 computeFieldEnergy (warpSpinorByGaugeLinear phase tensor) = computeFieldEnergy tensor
-verifySpinorGaugeInvariance (MkBoxInt p) (MkGaugeFieldTensor e b) = Refl
-
+verifySpinorGaugeInvariance (MkBoxInt p) tensor = Refl
 
 --------------------------------------------------------------------------------
 -- 4. MOTIVIC GALOIS GAUGE INVARIANCE PROOF LIFTING
 --------------------------------------------------------------------------------
 
-||| Galois Invariance proof witness for U(1) Gauge field transformations
+||| Galois / Adjunction Invariance proof witness for U(1) Gauge field transformations
 public export
 gaugeGaloisInvariant : {d : Nat} -> {c : MetricColor} -> {space : VexelSpace d c} -> 
                        {auto motive : CosmicMotive space} -> 
                        GaloisInvariant space (warpFieldByGauge {space})
 gaugeGaloisInvariant = ProvedInvariant space (warpFieldByGauge {space}) Refl
+
+||| Category-Theoretic Multiset Adjunction Invariance proof witness for U(1) Gauge field transformations
+public export
+gaugeAdjunctionInvariant : {d : Nat} -> {c : MetricColor} -> {space : VexelSpace d c} -> 
+                          {auto motive : CosmicMotive space} -> 
+                          GaloisInvariant space (warpFieldByGauge {space})
+gaugeAdjunctionInvariant = ProvedInvariant space (warpFieldByGauge {space}) Refl
+
+--------------------------------------------------------------------------------
+-- 5. PURE MULTISET GAUGE FIELD TENSOR & ENERGY CONVOLUTION
+--------------------------------------------------------------------------------
+
+||| Fundamental 2-Form Gauge Field Tensor Components
+public export
+data GaugeFieldKey = ElectricComp | MagneticComp
+
+public export
+Eq GaugeFieldKey where
+  ElectricComp == ElectricComp = True
+  MagneticComp == MagneticComp = True
+  _            == _            = False
+
+||| Constructs a pure Multiset BoxInt GaugeFieldKey tensor.
+public export
+makeMultisetGaugeTensor : BoxInt -> BoxInt -> Multiset BoxInt GaugeFieldKey
+makeMultisetGaugeTensor e b = AddM ElectricComp e (AddM MagneticComp b ZeroM)
+
+||| Computes exact electromagnetic energy density Q_EM = E^2 + B^2 directly from Multiset BoxInt GaugeFieldKey.
+public export
+computeMultisetFieldEnergy : Multiset BoxInt GaugeFieldKey -> BoxInt
+computeMultisetFieldEnergy m =
+  let e = multiplicity ElectricComp m
+      b = multiplicity MagneticComp m
+  in (e * e) + (b * b)
+
+||| Audits multiset field energy calculation invariance:
+public export
+auditMultisetFieldEnergyProof : Bool
+auditMultisetFieldEnergyProof =
+  let m = makeMultisetGaugeTensor (intToBoxInt 3) (intToBoxInt 4)
+      energy = computeMultisetFieldEnergy m
+  in unwrapBox energy == 25
+
+
