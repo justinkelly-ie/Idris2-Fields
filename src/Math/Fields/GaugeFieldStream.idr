@@ -1,6 +1,7 @@
 module Math.Fields.GaugeFieldStream
 
 import public Core.BoxInt
+import public Core.Order.Preorder
 import public Math.OnSeq.FusedStream
 import public Math.OnSeq.ConjugateAdjunction
 import public Math.Fields.GaugeGroup
@@ -85,4 +86,24 @@ auditGaugeFieldStreamProof =
       flux1 = fusedIntegrateGaugeFlux (limit 100) tokens
       flux2 = fusedConjugateGaugeFlux (limit 100) tokens
   in unwrapBox flux1 == 20 && flux1 == flux2
+
+--------------------------------------------------------------------------------
+-- 3. BIANCHI GAUGE FIELD STREAM TRANSPORT
+--------------------------------------------------------------------------------
+
+||| A Deforested Gauge Field Stream transporting an erased Bianchi Identity witness (dF = 0) across flux streams.
+public export
+record BianchiGaugeFieldStream (fE : Nat) (fB : Nat) (totalFlux : Nat) where
+  constructor MkBianchiGaugeFieldStream
+  streamData : FusedStream GaugeFieldToken
+  0 bianchiPrf : BianchiIdentityWitness fE fB totalFlux
+
+||| Constructs a deforested Gauge Field Stream with a compile-time Bianchi identity witness.
+public export
+makeBianchiGaugeFieldStream : (fE : Nat) -> (fB : Nat) -> (totalFlux : Nat) ->
+                              (0 prf : BianchiIdentityWitness fE fB totalFlux) ->
+                              List (SpacetimeIndex, BoxInt) ->
+                              BianchiGaugeFieldStream fE fB totalFlux
+makeBianchiGaugeFieldStream fE fB tot prf items =
+  MkBianchiGaugeFieldStream (unfoldGaugeStream items) prf
 
