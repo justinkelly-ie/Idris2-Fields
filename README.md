@@ -1,11 +1,11 @@
-# Idris2-Fields
+# FinSc-Fields
 
 [![Idris 2 Verification](https://img.shields.io/badge/Idris_2-0.8.0-blue.svg)](https://www.idris-lang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **Layer 7 Monadic Session Types, Gauge Group Actions & Gauge Flux Fields for Idris 2**
 
-`Idris2-Fields` forms **Layer 7** of the 10-layer constructive non-linear multiset science framework. It formalizes linear session types for gauge field protocols (`SessionProto`), session protocol duality (`dualProto`), metrically synchronized linear channels (`GaugeSyncChannel`), discrete U(1) gauge group phase transformations (`GaugePhase`), gauge field tensors (`GaugeFieldTensor`), electromagnetic energy density ($Q_{\text{EM}} = E^2 + B^2$), 4D dihedral phase transformations, and compile-time proof witnesses for gauge invariance.
+`FinSc-Fields` forms **Layer 7** of the 10-layer constructive non-linear multiset science framework. It formalizes linear session types for gauge field protocols (`SessionProto`), session protocol duality (`dualProto`), metrically synchronized linear channels (`GaugeSyncChannel`), discrete U(1) gauge group phase transformations (`GaugePhase`), gauge field tensors (`GaugeFieldTensor`), electromagnetic energy density ($Q_{\text{EM}} = E^2 + B^2$), 4D dihedral phase transformations, and compile-time proof witnesses for gauge invariance.
 
 ---
 
@@ -31,8 +31,8 @@
 ## 🚀 Building & Installing
 
 ```bash
-idris2 --build Idris2-Fields.ipkg
-idris2 --install Idris2-Fields.ipkg
+idris2 --build FinSc-Fields.ipkg
+idris2 --install FinSc-Fields.ipkg
 ```
 
 ---
