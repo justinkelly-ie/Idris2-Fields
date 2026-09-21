@@ -72,12 +72,51 @@ fusedConjugateGaugeFlux f items =
     (intToBoxInt 0)
     items
 
+||| Deforested stream sifting operator filtering gauge field tokens without intermediate allocations.
+%inline public export
+siftGaugeStream : (GaugeFieldToken -> Bool) -> FusedStream GaugeFieldToken -> FusedStream GaugeFieldToken
+siftGaugeStream = siftFusedStream
+
+||| Sifts a gauge field stream by specific spacetime index pair (\mu, \nu).
+%inline public export
+siftGaugeStreamByIndex : SpacetimeIndex -> FusedStream GaugeFieldToken -> FusedStream GaugeFieldToken
+siftGaugeStreamByIndex target = siftFusedStream (\tok => index tok == target)
+
+||| Computes sifted gauge flux density for a predicate over a deforested gauge field stream.
+public export covering
+fusedComputeGaugeFluxStream : Fuel -> (GaugeFieldToken -> Bool) -> List (SpacetimeIndex, BoxInt) -> BoxInt
+fusedComputeGaugeFluxStream f pred items =
+  fusedHylomorphism f
+    (\st => case st of
+              [] => Done
+              (idx, val) :: rest =>
+                let tok = MkGaugeToken idx val
+                in if pred tok then Yield tok rest else Skip rest)
+    (\tok, acc => strength tok + acc)
+    (intToBoxInt 0)
+    items
+
+||| Zero-allocation single-pass field tensor flux decomposition (temporal/E-field vs spatial/B-field components).
+public export covering
+fusedComputeFieldTensorStream : Fuel -> List (SpacetimeIndex, BoxInt) -> (BoxInt, BoxInt)
+fusedComputeFieldTensorStream f items =
+  fusedHylomorphism f
+    (\st => case st of
+              [] => Done
+              (idx, val) :: rest => Yield (MkGaugeToken idx val) rest)
+    (\tok, (eFlux, bFlux) =>
+        if mu (index tok) == 0 || nu (index tok) == 0
+          then (strength tok + eFlux, bFlux)
+          else (eFlux, strength tok + bFlux))
+    (intToBoxInt 0, intToBoxInt 0)
+    items
+
 --------------------------------------------------------------------------------
 -- 2. VERIFICATION AUDIT WITNESS
 --------------------------------------------------------------------------------
 
 ||| Audit witness verifying zero-allocation total gauge flux integration over deforested streams.
-public export
+public export covering
 auditGaugeFieldStreamProof : Bool
 auditGaugeFieldStreamProof =
   let idx0 = MkIndex 0 1
@@ -85,7 +124,11 @@ auditGaugeFieldStreamProof =
       tokens = [(idx0, intToBoxInt 12), (idx1, intToBoxInt 8)]
       flux1 = fusedIntegrateGaugeFlux (limit 100) tokens
       flux2 = fusedConjugateGaugeFlux (limit 100) tokens
-  in unwrapBox flux1 == 20 && flux1 == flux2
+      siftedFlux = fusedComputeGaugeFluxStream (limit 100) (\tok => index tok == idx0) tokens
+      (eFlux, bFlux) = fusedComputeFieldTensorStream (limit 100) tokens
+  in unwrapBox flux1 == 20 && flux1 == flux2 &&
+     unwrapBox siftedFlux == 12 &&
+     unwrapBox eFlux == 12 && unwrapBox bFlux == 8
 
 --------------------------------------------------------------------------------
 -- 3. BIANCHI GAUGE FIELD STREAM TRANSPORT
